@@ -5,24 +5,53 @@ const base64ToImage = require('base64-to-image');
 const uuidv4 = require('uuid/v4');
 
 const MainCategory = require('../model/maincategory');
+const multer = require('multer');
+
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+      cb(null, './uploads/');
+    },
+    filename: function(req, file, cb) {
+      cb(null, new Date().toISOString() + file.originalname);
+    }
+  });
+  
+  const fileFilter = (req, file, cb) => {
+    // reject a file
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  };
+  
+  const upload = multer({
+    storage: storage,
+    limits: {
+      fileSize: 1024 * 1024 * 5
+    },
+    fileFilter: fileFilter
+  });
+  
 
 // create state post
 
-router.post('/', (req, res, next) => {
+router.post('/',upload.single('mcat_image'), (req, res, next) => {
     console.log(req.body);
 
-    var base64Str = req.body.mcat_image;
-    var path = './uploads/';
+    // var base64Str = req.body.mcat_image;
+    // var path = './uploads/';
 
-    var filename = uuidv4();
-    var optionalObj = { 'fileName': filename, 'type': 'jpg' };
+    // var filename = uuidv4();
+    // var optionalObj = { 'fileName': filename, 'type': 'jpg' };
 
-    base64ToImage(base64Str, path, optionalObj);
+    // base64ToImage(base64Str, path, optionalObj);
 
     const maincategory = new MainCategory({
         _id: new mongoose.Types.ObjectId(),
         mcat_name: req.body.mcat_name,
-        mcat_image: "https://healthcare-2.herokuapp.com/uploads/" + filename + ".jpg"
+        mcat_image: req.file.path
     });
 
     maincategory.save().then(result => {
